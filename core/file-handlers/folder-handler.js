@@ -14,7 +14,7 @@ async function _findFolder(folderName, folderPath, namespace) {
   if (!folderPath.endsWith('/')) folderPath += '/';
   folderName = folderName.replace(/\//g, '');
 
-  if (folderName.trim() === '' && folderPath === '/') return true;
+  if (folderName.trim() === '' && folderPath === '/') return true; // special case: root folder '/' is always considered existed
 
   const existingFile = await getFileMetadataStorage().findFileMetadata(transform({
     fileName: folderName,

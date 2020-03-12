@@ -34,7 +34,7 @@ function startExpressServer(options) {
       createFolder,
       listFilesByFolder,
       uploadFile,
-      downloadFile,
+      downloadFileByFilePath,
       namespaceMiddleware,
     } = initFileExplorer({
       dependencies: {
@@ -47,11 +47,11 @@ function startExpressServer(options) {
     // app.get('/files', getUploadFileUrl);
     // app.post('/files', createFileMetadata);
     app.post('/folders', createFolder);
-    app.delete('/files/:fileId', removeFile);
-    app.get('/files-metadata/:fileId', getFileMetadata);
+    app.delete('/files/:id', removeFile);
+    app.get('/files-metadata/:id', getFileMetadata);
     app.get('/folders', listFilesByFolder);
     app.post('/files', uploadFile);
-    app.get('/files/:filePath(*)', downloadFile);
+    app.get('/files/:filePath(*)', downloadFileByFilePath);
   });
 
   app.set('port', port);

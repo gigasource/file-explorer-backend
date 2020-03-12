@@ -1,6 +1,5 @@
-const uuidv1 = require('uuid/v1');
-const path = require('path');
 const {getFileStorage} = require('../util/dependencies');
+const {createUniqueFileName} = require('../file-handlers/file-metadata-handler');
 
 const fileStorage = getFileStorage();
 
@@ -13,17 +12,20 @@ class MulterStorageEngine {
     // req.on('close', () => this.cleanUploadedFiles(file, cb));
 
     if (req.namespace) file.namespace = req.namespace;
-    file.mimeType = file.mimetype;
-    file.host = req.headers.host;
     file.fileName = file.originalname;
+    file.mimeType = file.mimetype;
     file.folderPath = req.query.folderPath;
-    file.chunkSizeInBytes = this.options.chunkSizeInBytes;
+    file.host = req.headers.host;
+    file.fileName = await createUniqueFileName(file);
 
-    const uploadResult = await fileStorage.uploadFile(file, cb);
-    if (uploadResult.sizeInBytes) file.sizeInBytes = uploadResult.sizeInBytes;
+    const uploadResult = await fileStorage.uploadFile(file);
+    const {sizeInBytes, fileId} = uploadResult
+    if (sizeInBytes) file.sizeInBytes = sizeInBytes;
+    if (fileId) file.fileId = fileId;
+
     //todo: handle upload error
-    file.uploadSuccess = true;
-    cb(null, uploadResult);
+    file.uploadSuccess = true; // this is used in handler to return result to client
+    cb(null);
   }
 
   _removeFile(req, file, cb) {
