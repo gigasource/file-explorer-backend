@@ -18,7 +18,7 @@ class GridFsFileStorage extends FileStorage {
     })
   }
 
-  uploadFile(file, cb) {
+  uploadFile(file) {
     return new Promise((resolve, reject) => {
       const uploadStream = this.bucket.openUploadStream(file.fileName, {metadata: file});
       const uploadStreamId = uploadStream.id;
@@ -55,8 +55,8 @@ class GridFsFileStorage extends FileStorage {
     this.bucket.delete(fileInfo._id);
   }
 
-  async downloadFile(fileId) {
-    const fileObjectId = mongoose.Types.ObjectId(fileId);
+  async downloadFile(fileMetadata) {
+    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileId);
     // return this.db.collection(this.chunkCollectionName).findOne({files_id: fileObjectId});
     return this.bucket.openDownloadStream(fileObjectId);
   }

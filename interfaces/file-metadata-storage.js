@@ -2,7 +2,7 @@ class FileMetadataStorage {
   createFolder(folder) {
   }
 
-  createFileMetadata(file) {
+  createFileMetadata(fileMetadata) {
   }
 
   deleteFileMetadata(conditions) {

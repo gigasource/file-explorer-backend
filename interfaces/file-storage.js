@@ -1,16 +1,24 @@
 class FileStorage {
-  getFileUploadUrl() {
+
+  /**
+   * only for Amazon S3 since its file-uploading mechanism is indirect
+   * (client will upload the file directly to S3 instead of to server)
+   * @param fileName the name is used for registering with S3
+   */
+  getFileUploadUrl(fileName) {
   }
 
-  // return an object with field 'sizeInBytes' to store the size of the file
-  uploadFile() {
+  /**
+   * for direct storage such as GridFS, BunnyCDN (client file is uploaded to server then server sends file to storage)
+   * @param file the file used for uploading
+   */
+  uploadFile(file) {
   }
 
-  downloadFile() {
+  downloadFile(fileMetadata) {
   }
 
-  deleteFile() {
-
+  deleteFile(fileMetadata) {
   }
 }
 

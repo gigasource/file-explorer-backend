@@ -62,7 +62,7 @@ function initHandlers(options) {
       return res.status(404).json({error: `File with path ${filePath} not found`});
     }
 
-    const fileReadStream = await getFileStorage().downloadFile(fileMetadata.fileId);
+    const fileReadStream = await getFileStorage().downloadFile(fileMetadata);
 
     res.setHeader('Content-Type', fileMetadata.mimeType);
     res.setHeader('Content-Length', fileMetadata.sizeInBytes);
@@ -111,12 +111,12 @@ function initHandlers(options) {
 
   async function removeFile(req, res) {
     const {fileId} = req.params;
-    const file = await getFileMetadataById(fileId, req.namespace);
+    const fileMetadata = await getFileMetadataById(fileId, req.namespace);
 
-    if (!file) return res.status(404).json({error: `No file with ID ${fileId} found`});
+    if (!fileMetadata) return res.status(404).json({error: `No file with ID ${fileId} found`});
 
     try {
-      await fileStorage.deleteFile(createFileWithMappings(file));
+      await fileStorage.deleteFile(createFileWithMappings(fileMetadata));
       await deleteFileMetadataById(fileId, req.namespace);
       res.status(204).send();
     } catch (e) {
