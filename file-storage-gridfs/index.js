@@ -20,7 +20,7 @@ class GridFsFileStorage extends FileStorage {
 
   uploadFile(file) {
     return new Promise((resolve, reject) => {
-      const uploadStream = this.bucket.openUploadStream(file.fileName, {metadata: file});
+      const uploadStream = this.bucket.openUploadStream(file.folderPath + file.fileName, {metadata: file});
       const uploadStreamId = uploadStream.id;
 
       uploadStream.once('finish', async (uploadedFile) => {
@@ -49,9 +49,7 @@ class GridFsFileStorage extends FileStorage {
   }
 
   async deleteFile(file) {
-    const fileParts = path.parse(file);
-    const filename = fileParts.base;
-    const fileInfo = await this.db.collection(this.fileCollectionName).findOne({filename});
+    const fileInfo = await this.db.collection(this.fileCollectionName).findOne({filename: file.folderPath + file.fileName});
     this.bucket.delete(fileInfo._id);
   }
 

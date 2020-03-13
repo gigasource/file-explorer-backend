@@ -13,6 +13,9 @@ class FileMetadataStorage {
 
   findFileMetadata(conditions) {
   }
+
+  editFileMetadata(conditions, newValues) {
+  }
 }
 
 module.exports = FileMetadataStorage;

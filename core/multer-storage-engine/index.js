@@ -1,5 +1,6 @@
 const {getFileStorage} = require('../util/dependencies');
 const {createUniqueFileName} = require('../file-handlers/file-metadata-handler');
+const {transformInternal} = require('../util/property-mapping');
 
 const fileStorage = getFileStorage();
 
@@ -15,6 +16,7 @@ class MulterStorageEngine {
     file.fileName = file.originalname;
     file.mimeType = file.mimetype;
     file.folderPath = req.query.folderPath;
+    if (!file.folderPath.endsWith('/')) file.folderPath += '/';
     file.host = req.headers.host;
     file.fileName = await createUniqueFileName(file);
 

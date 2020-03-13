@@ -1,9 +1,12 @@
 function initHandlers(options) {
   const {getFileStorage} = require('../util/dependencies');
   const fileStorage = getFileStorage();
-  const {createFolder, listFilesByFolder, findFolder} = require('../file-handlers/folder-handler');
-  const {transform} = require('../util/property-mapping');
-  const {createFileMetadata, getFileMetadataById, deleteFileMetadataById, getFileByFullPath} = require('../file-handlers/file-metadata-handler');
+  const {createFolder, listFilesByFolder, findFolder, constructFolderTree} = require('../file-handlers/folder-handler');
+  const {transformExternal} = require('../util/property-mapping');
+  const {
+    createFileMetadata, findFileMetadataById, deleteFileMetadataById,
+    findFileByFullPath, editFileMetadataById
+  } = require('../file-handlers/file-metadata-handler');
   const path = require('path');
   const uuidv1 = require('uuid/v1');
 
@@ -43,9 +46,8 @@ function initHandlers(options) {
     }
   }
 
-  // Mtdt = Metadata (to avoid function name clashing)
   // This function is used after the file is uploaded to S3 successfully to insert file metadata into database
-  async function createFileMtdt(req, res) {
+  async function createFileMetadataHandler(req, res) {
     if (!(await validateFolderPath(req.body.folderPath, req.namespace, res))) return;
 
     try {
@@ -92,11 +94,11 @@ function initHandlers(options) {
 
   async function downloadFileByFilePath(req, res) {
     const {filePath} = req.params;
-    let fileMetadata = await getFileByFullPath(filePath, req.namespace);
+    let fileMetadata = await findFileByFullPath(filePath, req.namespace);
 
     if (!fileMetadata) return res.status(404).json({error: `File with path ${filePath} not found`});
 
-    const fileReadStream = await getFileStorage().downloadFile(transform(fileMetadata));
+    const fileReadStream = await getFileStorage().downloadFile(transformExternal(fileMetadata));
 
     res.setHeader('Content-Type', fileMetadata.mimeType);
     res.setHeader('Content-Length', fileMetadata.sizeInBytes);
@@ -112,7 +114,7 @@ function initHandlers(options) {
 
     try {
       let files = (await listFilesByFolder(folderPath, req.namespace)) || [];
-      res.status(200).json(files);
+      res.status(200).json(transformExternal(files));
     } catch (e) {
       console.error(e);
       res.status(500).send();
@@ -121,7 +123,7 @@ function initHandlers(options) {
 
   async function getFileMetadata(req, res) {
     const {id} = req.params;
-    const file = await getFileMetadataById(id, req.namespace);
+    const file = await findFileMetadataById(id, req.namespace);
 
     if (!file) res.status(404).json({error: `No file with ID ${id} found`});
     else res.status(200).json(file);
@@ -146,14 +148,14 @@ function initHandlers(options) {
     }
   }
 
-  async function removeFile(req, res) {
+  async function deleteFileHandler(req, res) {
     const {id} = req.params;
-    const fileMetadata = await getFileMetadataById(id, req.namespace);
+    const fileMetadata = await findFileMetadataById(id, req.namespace);
 
     if (!fileMetadata) return res.status(404).json({error: `No file with ID ${id} found`});
 
     try {
-      await fileStorage.deleteFile(transform(fileMetadata));
+      await fileStorage.deleteFile(transformExternal(fileMetadata));
       await deleteFileMetadataById(id, req.namespace);
       res.status(204).send();
     } catch (e) {
@@ -162,15 +164,39 @@ function initHandlers(options) {
     }
   }
 
+  async function editFileMetadataHandler(req, res) {
+    const {id, newFileName} = req.body;
+
+    const file = await findFileMetadataById(id, req.namespace);
+    if (!file) return res.status(404).json({error: 'Requested file does not exist'});
+
+    try {
+      const newFile = await editFileMetadataById(id, {fileName: newFileName});
+      if (newFile === null) return res.status(400).json({error: 'Can not rename file/folder to an existing name'});
+      res.status(200).json(newFile);
+    } catch (e) {
+      console.error(e);
+      res.status(500).send();
+    }
+  }
+
+  async function getFolderTree(req, res) {
+    const folderTree = await constructFolderTree(req.namespace);
+
+    res.status(200).json(folderTree);
+  }
+
   return {
     getUploadFileUrl,
-    removeFile,
-    createFileMetadata: createFileMtdt,
+    deleteFile: deleteFileHandler,
+    createFileMetadata: createFileMetadataHandler,
     getFileMetadata,
     createFolder: createFolderHandler,
     listFilesByFolder: listFilesByFolderHandler,
     uploadFile,
     downloadFileByFilePath,
+    getFolderTree,
+    editFileMetadata: editFileMetadataHandler,
   }
 }
 
