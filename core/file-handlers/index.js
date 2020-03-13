@@ -38,7 +38,7 @@ function initHandlers(options) {
     fileName = `${uuidv1()}${path.extname(fileName)}`;
 
     try {
-      const uploadData = fileStorage.getFileUploadUrl(fileName);
+      const uploadData = await fileStorage.getFileUploadUrl(fileName);
       res.send(200).json(uploadData);
     } catch (e) {
       console.error(e);

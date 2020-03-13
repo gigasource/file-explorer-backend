@@ -5,7 +5,7 @@ class FileStorage {
    * (client will upload the file directly to S3 instead of to server)
    * @param fileName the name is used for registering with S3
    */
-  getFileUploadUrl(fileName) {
+  async getFileUploadUrl(fileName) {
   }
 
   /**
