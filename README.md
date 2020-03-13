@@ -81,3 +81,6 @@ Then file metadata object will be returned and saved in database with new proper
 
 ## 2. Code example
 Check repository https://github.com/gigasource/file-explorer for examples
+
+## 3. Roadmap
+- Do property mappings for request queries and body

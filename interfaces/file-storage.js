@@ -15,6 +15,9 @@ class FileStorage {
   uploadFile(file) {
   }
 
+  /**
+   * This must returns a Readable stream of the file instead of the whole file to avoid large memory consumption
+   */
   downloadFile(fileMetadata) {
   }
 
