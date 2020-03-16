@@ -84,3 +84,4 @@ Check repository https://github.com/gigasource/file-explorer for examples
 
 ## 3. Roadmap
 - Do property mappings for request queries and body
+- Handle error messages

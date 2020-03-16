@@ -65,7 +65,7 @@ function initHandlers(options) {
 
   // 2. functions used specifically for direct storage such as BunnyCDN or GridFS, the file goes through the server so Multer is needed
   async function uploadFile(req, res) {
-    const folderPath = req.query.folderPath || req.body.folderPath;
+    const folderPath = req.query.folderPath;
     if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
 
     upload.any()(req, res, async function () {
@@ -155,7 +155,15 @@ function initHandlers(options) {
     if (!fileMetadata) return res.status(404).json({error: `No file with ID ${id} found`});
 
     try {
-      await fileStorage.deleteFile(transformExternal(fileMetadata));
+      if (fileMetadata.isFolder) {
+        const filesInFolder = await listFilesByFolder(fileMetadata.folderPath + fileMetadata.fileName + '/', req.namespace);
+        for (let f of filesInFolder) {
+          await fileStorage.deleteFile(transformExternal(f));
+        }
+      } else {
+        await fileStorage.deleteFile(transformExternal(fileMetadata));
+      }
+
       await deleteFileMetadataById(id, req.namespace);
       res.status(204).send();
     } catch (e) {
@@ -164,26 +172,64 @@ function initHandlers(options) {
     }
   }
 
-  async function editFileMetadataHandler(req, res) {
-    const {id, newFileName} = req.body;
-
+  async function fileExists(id, req, res) {
     const file = await findFileMetadataById(id, req.namespace);
-    if (!file) return res.status(404).json({error: 'Requested file does not exist'});
+    if (!file) {
+      res.status(404).json({error: 'Requested file does not exist'});
+      return false;
+    }
+    return true;
+  }
+
+  async function renameFileMetadata(req, res) {
+    const {newFileName} = req.body;
+    const {id} = req.params;
+
+    if (!id || !newFileName) return res.status(400).json({error: 'Missing required property: file ID or new file name not found'})
+
+    if (!(await fileExists(id, req, res))) return
 
     try {
-      const newFile = await editFileMetadataById(id, {fileName: newFileName});
-      if (newFile === null) return res.status(400).json({error: 'Can not rename file/folder to an existing name'});
-      res.status(200).json(newFile);
+      const result = await editFileMetadataById(id, {fileName: newFileName});
+      res.status(200).json(result);
+    } catch (e) {
+      handleError(e, res);
+    }
+  }
+
+  async function moveFileMetadata(req, res) {
+    const {newFolderPath} = req.body;
+    const {id} = req.params;
+
+    if (!id || !newFolderPath) return res.status(400).json({error: 'Missing required property: file ID or new folder path not found'})
+
+    if (!(await fileExists(id, req, res))) return
+
+    try {
+      const result = await editFileMetadataById(id, {folderPath: newFolderPath});
+      res.status(200).json(result);
+    } catch (e) {
+      handleError(e, res);
+    }
+  }
+
+  async function getFolderTree(req, res) {
+    try {
+      const folderTree = await constructFolderTree(req.namespace);
+      res.status(200).json(folderTree);
     } catch (e) {
       console.error(e);
       res.status(500).send();
     }
   }
 
-  async function getFolderTree(req, res) {
-    const folderTree = await constructFolderTree(req.namespace);
-
-    res.status(200).json(folderTree);
+  function handleError(e, res) {
+    console.error(e);
+    e.code
+        ? res.status(500).json({
+          error: e.message
+        })
+        : res.status(500).send();
   }
 
   return {
@@ -196,7 +242,8 @@ function initHandlers(options) {
     uploadFile,
     downloadFileByFilePath,
     getFolderTree,
-    editFileMetadata: editFileMetadataHandler,
+    renameFileMetadata,
+    moveFileMetadata,
   }
 }
 

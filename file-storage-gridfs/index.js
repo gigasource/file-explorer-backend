@@ -20,7 +20,8 @@ class GridFsFileStorage extends FileStorage {
 
   uploadFile(file) {
     return new Promise((resolve, reject) => {
-      const uploadStream = this.bucket.openUploadStream(file.folderPath + file.fileName, {metadata: file});
+      // const uploadStream = this.bucket.openUploadStream(file.folderPath + file.fileName, {metadata: file});
+      const uploadStream = this.bucket.openUploadStream('', {metadata: {}});
       const uploadStreamId = uploadStream.id;
 
       uploadStream.once('finish', async (uploadedFile) => {
@@ -30,11 +31,10 @@ class GridFsFileStorage extends FileStorage {
 
         chunks.forEach(chunk => {
           const chunkMd5 = md5(chunk.data.buffer);
-          chunksInfo.push({path: `http://${file.host}/chunk/${chunk._id.toHexString()}`, n: chunk.n, md5: chunkMd5});
+          chunksInfo.push({chunkId: chunk._id, n: chunk.n, md5: chunkMd5});
         });
 
-        file.chunksInfo = chunksInfo;
-        this.db.collection(this.fileCollectionName).updateOne({_id: uploadStreamId}, {$set: {metadata: file}});
+        this.db.collection(this.fileCollectionName).updateOne({_id: uploadStreamId}, {$set: {metadata: {chunks: chunksInfo}}});
 
         resolve({
           fileId: uploadedFileId,
@@ -48,14 +48,13 @@ class GridFsFileStorage extends FileStorage {
     });
   }
 
-  async deleteFile(file) {
-    const fileInfo = await this.db.collection(this.fileCollectionName).findOne({filename: file.folderPath + file.fileName});
-    this.bucket.delete(fileInfo._id);
+  async deleteFile(fileMetadata) {
+    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileId);
+    return this.bucket.delete(fileObjectId);
   }
 
   async downloadFile(fileMetadata) {
     const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileId);
-    // return this.db.collection(this.chunkCollectionName).findOne({files_id: fileObjectId});
     return this.bucket.openDownloadStream(fileObjectId);
   }
 }

@@ -23,6 +23,13 @@ class FileStorage {
 
   deleteFile(fileMetadata) {
   }
+
+  /**
+   * Delete many files with a list of file identifiers
+   * @param fileIdentifierList file identifier can be ObjectId in case of GridFS or file URL in case of Amazon S3 or BunnyCDN
+   */
+  deleteFiles(fileIdentifierList) {
+  }
 }
 
 module.exports = FileStorage;
