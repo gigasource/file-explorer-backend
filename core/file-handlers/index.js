@@ -93,6 +93,14 @@ function initHandlers(options) {
   }
 
   async function downloadFileByFilePath(req, res) {
+    await getFileByFilePath(req, res, 'download')
+  }
+
+  async function viewFileByFilePath(req, res) {
+    await getFileByFilePath(req, res, 'view')
+  }
+
+  async function getFileByFilePath(req, res, action) {
     const {filePath} = req.params;
     let fileMetadata = await findFileByFullPath(filePath, req.namespace);
 
@@ -102,6 +110,7 @@ function initHandlers(options) {
 
     res.setHeader('Content-Type', fileMetadata.mimeType);
     res.setHeader('Content-Length', fileMetadata.sizeInBytes);
+    if (action === 'download') res.setHeader('Content-disposition', 'attachment; filename=' + fileMetadata.fileName);
     res.status(200);
 
     fileReadStream.pipe(res);
@@ -240,6 +249,7 @@ function initHandlers(options) {
     createFolder: createFolderHandler,
     listFilesByFolder: listFilesByFolderHandler,
     uploadFile,
+    viewFileByFilePath,
     downloadFileByFilePath,
     getFolderTree,
     renameFileMetadata,
