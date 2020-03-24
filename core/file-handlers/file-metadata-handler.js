@@ -1,18 +1,20 @@
 const {getFileMetadataStorage} = require('../util/dependencies');
-const {transformExternal} = require('../util/property-mapping');
+const {transformExternal, transformInternal} = require('../util/property-mapping');
 const {ERROR_CODE, constructError} = require('../util/errors');
 
-function findFileByFullPath(fullPath, namespace) {
+async function findFileByFullPath(fullPath, namespace) {
   const paths = fullPath.split('/');
   let fileName = paths.pop();
   if (fileName.trim().length === 0) fileName = paths.pop();
   let folderPath = paths.join('/');
   if (!folderPath.endsWith('/')) folderPath += '/';
 
-  return getFileMetadataStorage().findFileMetadata(transformExternal({
+  let returnedFile = await getFileMetadataStorage().findFileMetadata(transformExternal({
     fileName, folderPath,
     ...(namespace ? {namespace} : {}),
   }));
+
+  return transformInternal(returnedFile)
 }
 
 async function createUniqueFileName(file) {
@@ -26,6 +28,7 @@ async function createUniqueFileName(file) {
   let duplicateIdentifier = 1;
 
   while (f) {
+    f = transformInternal(f)
     const nameParts = file.fileName.split('.');
     if (nameParts.length > 1) {
       nameParts[nameParts.length - 2] += ` (${duplicateIdentifier++})`;
@@ -47,32 +50,33 @@ async function createUniqueFileName(file) {
 async function createFileMetadata(file) {
   if (!file.folderPath.endsWith('/')) file.folderPath += '/';
   file.fileName = await createUniqueFileName(file);
-  return getFileMetadataStorage().createFileMetadata(transformExternal(file));
+  return await getFileMetadataStorage().createFileMetadata(transformExternal(file));
 }
 
-function findFileMetadataById(fileId, namespace) {
-  const file = getFileMetadataStorage().findFileMetadata({
+async function findFileMetadataById(fileId, namespace) {
+  const file = await getFileMetadataStorage().findFileMetadata({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
 
-  return file ? file : null;
+  return file ? transformInternal(file) : null;
 }
 
 async function deleteFileMetadataById(fileId, namespace) {
-  const editedFile = await getFileMetadataStorage().findFileMetadata({
+  let editedFile = await getFileMetadataStorage().findFileMetadata({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
+  editedFile = transformInternal(editedFile)
 
   if (editedFile.isFolder) {
-    await getFileMetadataStorage().deleteFileMetadata({
+    await getFileMetadataStorage().deleteFileMetadata(transformExternal({
       folderPath: editedFile.folderPath + editedFile.fileName + '/',
       ...(namespace ? {namespace} : {}),
-    });
+    }));
   }
 
-  return getFileMetadataStorage().deleteFileMetadata({
+  return await getFileMetadataStorage().deleteFileMetadata({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
@@ -90,17 +94,19 @@ async function editFileMetadataById(fileId, newValues, namespace) {
 
 async function renameFileMetadata(fileId, newFileName, namespace) {
   // check if new name has duplicates -> if yes throw an error
+  let editedFile = await getFileMetadataStorage().findFileMetadata({
+    _id: fileId,
+    ...(namespace ? {namespace} : {}),
+  });
+  editedFile = transformInternal(editedFile)
+
   const filesWithSameName = await getFileMetadataStorage().findFileMetadatas(transformExternal({
     fileName: newFileName,
+    folderPath: editedFile.folderPath,
     ...(namespace ? {namespace} : {}),
   }))
 
   if (filesWithSameName && filesWithSameName.length > 0) throw constructError(ERROR_CODE.RENAME_FILE_DUPLICATED_FILE)
-
-  const editedFile = await getFileMetadataStorage().findFileMetadata({
-    _id: fileId,
-    ...(namespace ? {namespace} : {}),
-  });
 
   // if a folder name is edited -> update folderPath of children files
   if (editedFile.isFolder) {
@@ -116,10 +122,11 @@ async function renameFileMetadata(fileId, newFileName, namespace) {
 }
 
 async function moveFileMetadata(fileId, newFolderPath, namespace) {
-  const editedFile = await getFileMetadataStorage().findFileMetadata({
+  let editedFile = await getFileMetadataStorage().findFileMetadata({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
+  editedFile = transformInternal(editedFile)
 
   // check if new folder has duplicates -> if yes throw an error
   const filesWithSameName = await getFileMetadataStorage().findFileMetadatas(transformExternal({
@@ -145,11 +152,11 @@ async function moveFileMetadata(fileId, newFolderPath, namespace) {
 
 module.exports = {
   createFileMetadata,
+  createUniqueFileName,
   findFileMetadataById,
   deleteFileMetadataById,
-  createUniqueFileName,
-  findFileByFullPath,
   editFileMetadataById,
+  findFileByFullPath,
   renameFileMetadata,
   moveFileMetadata,
 };

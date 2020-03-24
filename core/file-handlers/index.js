@@ -5,7 +5,7 @@ function initHandlers(options) {
   const {transformExternal} = require('../util/property-mapping');
   const {
     createFileMetadata, findFileMetadataById, deleteFileMetadataById,
-    findFileByFullPath, editFileMetadataById
+    findFileByFullPath, editFileMetadataById, createUniqueFileName,
   } = require('../file-handlers/file-metadata-handler');
   const path = require('path');
   const uuidv1 = require('uuid/v1');
@@ -29,20 +29,25 @@ function initHandlers(options) {
   }
 
   // 1. functions used specifically for indirect storage like Amazon S3 since client does the file uploading instead of server
-  async function getUploadFileUrl(req, res) {
-    if (!(await validateFolderPath(req.query.folderPath, req.namespace, res))) return;
+  async function getFileUploadUrl(req, res) {
+    const folderPath = req.query.folderPath;
+    if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
 
     let {fileName} = req.query;
     if (!fileName || fileName.trim().length === 0) return res.status(400).json({error: 'Invalid request: file name can not be empty'});
 
-    fileName = `${uuidv1()}${path.extname(fileName)}`;
+    const generatedFileName = `${uuidv1()}${path.extname(fileName)}`;
 
     try {
-      const uploadData = await fileStorage.getFileUploadUrl(fileName);
-      res.send(200).json(uploadData);
+      const uploadData = await fileStorage.getFileUploadUrl(generatedFileName);
+      res.status(200).json({
+        generatedFileName,
+        originalFileName: await createUniqueFileName({fileName, folderPath}),
+        ...uploadData
+      });
     } catch (e) {
       console.error(e);
-      res.send(500).send();
+      res.status(500).send();
     }
   }
 
@@ -63,7 +68,7 @@ function initHandlers(options) {
     }
   }
 
-  // 2. functions used specifically for direct storage such as BunnyCDN or GridFS, the file goes through the server so Multer is needed
+  // 2. functions used specifically for direct storage such as BunnyCDN or GridFS, the files goes through the server so Multer is needed
   async function uploadFile(req, res) {
     const folderPath = req.query.folderPath;
     if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
@@ -242,18 +247,18 @@ function initHandlers(options) {
   }
 
   return {
-    getUploadFileUrl,
-    deleteFile: deleteFileHandler,
     createFileMetadata: createFileMetadataHandler,
-    getFileMetadata,
     createFolder: createFolderHandler,
+    deleteFile: deleteFileHandler,
+    downloadFileByFilePath,
+    getFileMetadata,
+    getFileUploadUrl,
+    getFolderTree,
     listFilesByFolder: listFilesByFolderHandler,
+    moveFileMetadata,
+    renameFileMetadata,
     uploadFile,
     viewFileByFilePath,
-    downloadFileByFilePath,
-    getFolderTree,
-    renameFileMetadata,
-    moveFileMetadata,
   }
 }
 

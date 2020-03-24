@@ -1,4 +1,3 @@
-const requiredProperties = ['fileName', 'mimeType', 'uploadedFileName', 'sizeInBytes', 'folderPath', 'isFolder', 'namespace', 'fileId'];
 let propertyMappings = {};
 
 function transformInternal(externalObject) {
@@ -16,10 +15,6 @@ function transformInternal(externalObject) {
 
     const internalObject = new Proxy({}, propHandler);
 
-    requiredProperties.forEach(propertyName => {
-      internalObject[propertyName] = object[propertyName];
-      internalObject[propertyMappings[propertyName]] = object[propertyMappings[propertyName]];
-    });
     Reflect.ownKeys(object).forEach(propertyName => internalObject[propertyName] = object[propertyName]);
 
     return internalObject;

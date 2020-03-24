@@ -17,6 +17,12 @@
 
   // Size of the file when saved in storage
   sizeInBytes: Number, 
+
+  // File identifier on storage system to get the file when needed
+  // For example: 
+  // if the storage system is S3 or Bunny CDN, it can be an URL: https://bunny/file.txt
+  // if the storage system is GridFS, it is the ObjectId of the 'files' collection
+  fileId: String, 
 ```
 ### 1.b Optional properties
 ```
@@ -25,12 +31,6 @@
 
   // If namespace middleware is used
   namespace: String, 
-
-  // File identifier on storage system to get the file when needed
-  // For example: 
-  // if the storage system is S3 or Bunny CDN, it can be an URL: https://bunny/file.txt
-  // if the storage system is GridFS, it is the ObjectId of the 'files' collection
-  fileId: String, 
 ```
 
 An example of file metadata object:
