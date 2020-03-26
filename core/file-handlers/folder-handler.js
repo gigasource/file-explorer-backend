@@ -1,5 +1,5 @@
 const {getFileMetadataStorage} = require('../util/dependencies');
-const {transformExternal} = require('../util/property-mapping');
+const {transformExternal, transformInternal} = require('../util/property-mapping');
 const {createUniqueFileName} = require('./file-metadata-handler');
 
 async function findFolder(fullPath, namespace) {
@@ -16,11 +16,11 @@ async function _findFolder(folderName, folderPath, namespace) {
 
   if (folderName.trim() === '' && folderPath === '/') return true; // special case: root folder '/' is always considered existed
 
-  const existingFile = await getFileMetadataStorage().findFileMetadata({
+  const existingFile = await getFileMetadataStorage().findFileMetadata(transformExternal({
     fileName: folderName,
     folderPath,
     ...(namespace ? {namespace} : {}),
-  });
+  }));
   if (existingFile && existingFile.isFolder) return existingFile;
   else return null;
 }
@@ -33,11 +33,11 @@ async function createFolder(folderName, folderPath, namespace) {
 
   const existingFolder = await _findFolder(folderName, folderPath, namespace);
   if (existingFolder) return false;
-  else return getFileMetadataStorage().createFolder({
+  else return getFileMetadataStorage().createFolder(transformExternal({
     fileName: folderName,
     folderPath,
     ...(namespace ? {namespace} : {}),
-  });
+  }));
 }
 
 async function listFilesByFolder(folderPath, namespace) {
@@ -83,7 +83,7 @@ async function constructFolderTree(namespace) {
 
   return [{
     folderName: '/',
-    folders: await traverseFolderList(foldersAtRoot)
+    folders: await traverseFolderList(transformInternal(foldersAtRoot))
   }]
 }
 

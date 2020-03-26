@@ -18,16 +18,16 @@
   // Size of the file when saved in storage
   sizeInBytes: Number, 
 
-  // File identifier on storage system to get the file when needed
+  // File stored on storage system to get the file when needed
   // For example: 
   // if the storage system is S3 or Bunny CDN, it can be an URL: https://bunny/file.txt
   // if the storage system is GridFS, it is the ObjectId of the 'files' collection
-  fileId: String, 
+  fileSource: String, 
 ```
 ### 1.b Optional properties
 ```
   // FileName saved on storage system
-  uploadedFileName: String,
+  generatedFileName: String,
 
   // If namespace middleware is used
   namespace: String, 
@@ -41,9 +41,9 @@ An example of file metadata object:
   "folderPath": "/home/docs/",
   "sizeInBytes": "123",
   "isFolder": true,
-  "uploadedFileName": "random-file-name-65G9-GFDGFD-543534GDV-GT34GFDGDF.txt",
+  "generatedFileName": "random-file-name-65G9-GFDGFD-543534GDV-GT34GFDGDF.txt",
   "namespace": "user-admin-1",
-  "fileId": "https://bunnycdn/578543785348.txt (or an ObjectId: 8501859174829234 (GridFS))"
+  "fileSource": "https://bunnycdn/578543785348.txt (or an ObjectId: 8501859174829234 (GridFS))"
 }
 ```
 

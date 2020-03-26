@@ -37,7 +37,7 @@ class GridFsFileStorage extends FileStorage {
         this.db.collection(this.fileCollectionName).updateOne({_id: uploadStreamId}, {$set: {metadata: {chunks: chunksInfo}}});
 
         resolve({
-          fileId: uploadedFileId,
+          fileSource: uploadedFileId,
           filePath: `http://${file.host}/file/${file.fileName}`,
           chunksInfo,
           sizeInBytes: uploadedFile.length,
@@ -49,12 +49,12 @@ class GridFsFileStorage extends FileStorage {
   }
 
   async deleteFile(fileMetadata) {
-    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileId);
+    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
     return this.bucket.delete(fileObjectId);
   }
 
   async downloadFile(fileMetadata) {
-    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileId);
+    const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
     return this.bucket.openDownloadStream(fileObjectId);
   }
 }

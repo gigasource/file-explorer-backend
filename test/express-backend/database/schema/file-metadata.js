@@ -10,7 +10,7 @@ const fileSchema = new Schema({
     type: String,
     trim: true,
   },
-  uploadedFileName: {
+  generatedFileName: {
     type: String,
     trim: true,
   },
@@ -28,7 +28,7 @@ const fileSchema = new Schema({
     type: String,
     trim: true,
   },
-  fileId: {
+  fileSource: {
     type: String,
     trim: true,
   }

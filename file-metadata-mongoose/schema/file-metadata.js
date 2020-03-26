@@ -10,10 +10,6 @@ const fileSchema = new Schema({
     type: String,
     trim: true,
   },
-  uploadedFileName: {
-    type: String,
-    trim: true,
-  },
   sizeInBytes: {
     type: Number,
   },
@@ -24,11 +20,8 @@ const fileSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  namespace: {
-    type: String,
-    trim: true,
-  },
-  fileId: {
+  user: Schema.Types.ObjectId,
+  fileSource: {
     type: String,
     trim: true,
   },

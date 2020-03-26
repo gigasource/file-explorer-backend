@@ -78,7 +78,6 @@ function initHandlers(options) {
       let successCount = 0;
 
       for (const file of req.files) {
-        // const {fileId, filePath, chunksInfo, storageErrors} = file;
         const createdFile = await createFileMetadata(file);
 
         if (file.uploadSuccess) {
@@ -237,6 +236,10 @@ function initHandlers(options) {
     }
   }
 
+  function getPropertyMappings(req, res) {
+    res.status(200).json(options.propertyMappings)
+  }
+
   function handleError(e, res) {
     console.error(e);
     e.code
@@ -259,6 +262,7 @@ function initHandlers(options) {
     renameFileMetadata,
     uploadFile,
     viewFileByFilePath,
+    getPropertyMappings,
   }
 }
 

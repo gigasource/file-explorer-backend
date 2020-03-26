@@ -2,20 +2,16 @@ let propertyMappings = {};
 
 function transformInternal(externalObject) {
   function transformObject(object) {
-    const propHandler = {
-      get: function (obj, prop, receiver) {
-        prop = propertyMappings[prop] || prop;
-        return Reflect.get(obj, prop, receiver);
-      },
-      set: function (obj, prop, value) {
-        prop = propertyMappings[prop] || prop;
-        Reflect.set(obj, prop, value);
-      }
-    };
+    const internalObject = {}
 
-    const internalObject = new Proxy({}, propHandler);
+    Reflect.ownKeys(propertyMappings).forEach(key => {
+      if (Array.isArray(propertyMappings[key])) internalObject[key] = object[propertyMappings[key][0]]
+      else internalObject[key] = object[propertyMappings[key]]
+    })
 
-    Reflect.ownKeys(object).forEach(propertyName => internalObject[propertyName] = object[propertyName]);
+    Reflect.ownKeys(object).forEach(key => {
+      if (internalObject[key] === undefined) internalObject[key] = object[key]
+    })
 
     return internalObject;
   }
@@ -35,7 +31,8 @@ function transformExternal(internalObject) {
   function transformObject(obj) {
     const externalObject = {};
     Reflect.ownKeys(obj).forEach(originProp => {
-      const destProp = propertyMappings[originProp] ? propertyMappings[originProp] : originProp;
+      let destProp = propertyMappings[originProp] ? propertyMappings[originProp] : originProp;
+      if (Array.isArray(destProp)) destProp = destProp[0]
       externalObject[destProp] = obj[originProp];
     });
     return externalObject;
@@ -49,7 +46,7 @@ function transformExternal(internalObject) {
 }
 
 module.exports = {
-  transformInternal,
   setPropertyMappings,
+  transformInternal,
   transformExternal,
 };

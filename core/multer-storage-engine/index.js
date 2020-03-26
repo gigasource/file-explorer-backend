@@ -21,9 +21,9 @@ class MulterStorageEngine {
     file.fileName = await createUniqueFileName(file);
 
     const uploadResult = await fileStorage.uploadFile(file);
-    const {sizeInBytes, fileId} = uploadResult
+    const {sizeInBytes, fileSource} = uploadResult
     if (sizeInBytes) file.sizeInBytes = sizeInBytes;
-    if (fileId) file.fileId = fileId;
+    if (fileSource) file.fileSource = fileSource;
 
     //todo: handle upload error
     file.uploadSuccess = true; // this is used in handler to return result to client

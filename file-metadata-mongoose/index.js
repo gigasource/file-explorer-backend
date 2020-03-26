@@ -1,14 +1,17 @@
 const FileMetadataStorage = require('../interfaces/file-metadata-storage');
-const FileModel = require('./schema/file-metadata');
+let FileModel = require('./schema/file-metadata');
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 
 class Index extends FileMetadataStorage {
-  constructor() {
+  constructor(dataModel) {
     super();
+    if (dataModel) FileModel = dataModel
   }
 
   createFolder(folder) {
+    folder = this.transformObject(folder)
+
     return FileModel.create({
       ...folder,
       isFolder: true,
@@ -16,31 +19,39 @@ class Index extends FileMetadataStorage {
   }
 
   createFileMetadata(file) {
+    file = this.transformObject(file)
+
     return FileModel.create(file);
   }
 
   deleteFileMetadata(conditions) {
-    if (conditions._id) conditions._id = ObjectId(conditions._id);
+    conditions = this.transformObject(conditions)
 
     return FileModel.deleteMany(conditions);
   }
 
   findFileMetadatas(conditions) {
-    if (conditions._id) conditions._id = ObjectId(conditions._id);
+    conditions = this.transformObject(conditions)
 
     return FileModel.find(conditions).lean();
   }
 
   findFileMetadata(conditions) {
-    if (conditions._id) conditions._id = ObjectId(conditions._id);
+    conditions = this.transformObject(conditions)
 
     return FileModel.findOne(conditions).lean();
   }
 
   editFileMetadata(conditions, newValues) {
-    if (conditions._id) conditions._id = ObjectId(conditions._id);
+    conditions = this.transformObject(conditions)
 
     return FileModel.updateMany(conditions, newValues)
+  }
+
+  transformObject(obj) {
+    if (obj._id) obj._id = ObjectId(obj._id);
+    if (obj.user) obj.user = ObjectId(obj.user); //namespace
+    return obj
   }
 }
 

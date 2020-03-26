@@ -54,10 +54,10 @@ async function createFileMetadata(file) {
 }
 
 async function findFileMetadataById(fileId, namespace) {
-  const file = await getFileMetadataStorage().findFileMetadata({
+  const file = await getFileMetadataStorage().findFileMetadata(transformExternal({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
-  });
+  }));
 
   return file ? transformInternal(file) : null;
 }
@@ -76,20 +76,20 @@ async function deleteFileMetadataById(fileId, namespace) {
     }));
   }
 
-  return await getFileMetadataStorage().deleteFileMetadata({
+  return await getFileMetadataStorage().deleteFileMetadata(transformExternal({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
-  });
+  }));
 }
 
 async function editFileMetadataById(fileId, newValues, namespace) {
   if (newValues.fileName) await renameFileMetadata(fileId, newValues.fileName, namespace);
   if (newValues.folderPath) await moveFileMetadata(fileId, newValues.folderPath, namespace);
 
-  return await getFileMetadataStorage().editFileMetadata({
+  return await getFileMetadataStorage().editFileMetadata(transformExternal({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
-  }, transformExternal(newValues));
+  }), transformExternal(newValues));
 }
 
 async function renameFileMetadata(fileId, newFileName, namespace) {
