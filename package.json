@@ -1,5 +1,5 @@
 {
-  "name": "file-upload-backend-core",
+  "name": "file-upload-backend",
   "description": "An Express middleware for uploading files",
   "author": "Gigasource",
   "version": "1.0.0",
