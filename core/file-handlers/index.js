@@ -237,7 +237,7 @@ function initHandlers(options) {
   }
 
   function getPropertyMappings(req, res) {
-    res.status(200).json(options.propertyMappings)
+    res.status(200).json(options.propertyMappings || {})
   }
 
   function handleError(e, res) {
