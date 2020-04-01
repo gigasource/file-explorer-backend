@@ -20,7 +20,6 @@ const fileSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  user: Schema.Types.ObjectId,
   fileSource: {
     type: String,
     trim: true,
@@ -28,7 +27,11 @@ const fileSchema = new Schema({
   generatedFileName: {
     type: String,
     trim: true,
-  }
+  },
+  namespace: {
+    type: String,
+    trim: true,
+  },
 }, {
   timestamps: true
 });

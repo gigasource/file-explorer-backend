@@ -3,7 +3,7 @@ let FileModel = require('./schema/file-metadata');
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 
-class Index extends FileMetadataStorage {
+class MongooseFileMetadataStorage extends FileMetadataStorage {
   constructor(dataModel) {
     super();
     if (dataModel) FileModel = dataModel
@@ -50,9 +50,8 @@ class Index extends FileMetadataStorage {
 
   transformObject(obj) {
     if (obj._id) obj._id = ObjectId(obj._id);
-    if (obj.user) obj.user = ObjectId(obj.user); //namespace
     return obj
   }
 }
 
-module.exports = Index;
+module.exports = MongooseFileMetadataStorage;
