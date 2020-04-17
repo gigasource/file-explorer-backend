@@ -200,7 +200,7 @@ function initHandlers(options) {
         await fileStorage.deleteFile(transformExternal(fileMetadata));
       }
 
-      await deleteFileMetadataById(fileMetadata._id.toHexString(), req.namespace);
+      await deleteFileMetadataById(fileMetadata._id.toString(), req.namespace);
       res.status(204).send();
     } catch (e) {
       console.error(e);
