@@ -63,7 +63,7 @@ async function findFileMetadataById(fileId, namespace) {
 }
 
 async function findFileMetadataByFilePath(filePath, namespace) {
-  const lastSlashIndex = _.lastIndexOf(filePath, '/');
+  const lastSlashIndex = filePath.lastIndexOf('/');
   const fileName = filePath.substr(lastSlashIndex + 1);
   const folderPath = filePath.substr(0, lastSlashIndex + 1);
   const file = await getFileMetadataStorage().findFileMetadata(transformExternal({
