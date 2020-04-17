@@ -4,7 +4,7 @@ function initHandlers(options) {
   const {createFolder, listFilesByFolder, findFolder, constructFolderTree} = require('../file-handlers/folder-handler');
   const {transformExternal} = require('../util/property-mapping');
   const {
-    createFileMetadata, findFileMetadataById, deleteFileMetadataById,
+    createFileMetadata, findFileMetadataById, findFileMetadataByFilePath, deleteFileMetadataById,
     findFileByFullPath, editFileMetadataById, createUniqueFileName,
   } = require('../file-handlers/file-metadata-handler');
   const path = require('path');
@@ -185,6 +185,29 @@ function initHandlers(options) {
     }
   }
 
+  async function deleteFileByFilePath(req, res) {
+    const {filePath} = req.params;
+    const fileMetadata = await findFileMetadataByFilePath(filePath, req.namespace);
+    if (!fileMetadata) return res.status(404).json({error: `No file with path ${filePath} found`});
+
+    try {
+      if (fileMetadata.isFolder) {
+        const filesInFolder = await listFilesByFolder(fileMetadata.folderPath + fileMetadata.fileName + '/', req.namespace);
+        for (let f of filesInFolder) {
+          await fileStorage.deleteFile(transformExternal(f));
+        }
+      } else {
+        await fileStorage.deleteFile(transformExternal(fileMetadata));
+      }
+
+      await deleteFileMetadataById(fileMetadata._id.toHexString(), req.namespace);
+      res.status(204).send();
+    } catch (e) {
+      console.error(e);
+      res.status(500).send();
+    }
+  }
+
   async function fileExists(id, req, res) {
     const file = await findFileMetadataById(id, req.namespace);
     if (!file) {
@@ -253,6 +276,7 @@ function initHandlers(options) {
     createFileMetadata: createFileMetadataHandler,
     createFolder: createFolderHandler,
     deleteFile: deleteFileHandler,
+    deleteFileByFilePath,
     downloadFileByFilePath,
     getFileMetadata,
     getFileUploadUrl,
