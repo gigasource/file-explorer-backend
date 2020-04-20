@@ -62,6 +62,18 @@ async function findFileMetadataById(fileId, namespace) {
   return file ? transformInternal(file) : null;
 }
 
+async function findFileMetadataByFilePath(filePath, namespace) {
+  const lastSlashIndex = filePath.lastIndexOf('/');
+  const fileName = filePath.substr(lastSlashIndex + 1);
+  const folderPath = filePath.substr(0, lastSlashIndex + 1);
+  const file = await getFileMetadataStorage().findFileMetadata(transformExternal({
+    fileName,
+    folderPath,
+    ...(namespace ? {namespace} : {}),
+  }));
+  return file ? transformInternal(file) : null
+}
+
 async function deleteFileMetadataById(fileId, namespace) {
   let editedFile = await getFileMetadataStorage().findFileMetadata({
     _id: fileId,
@@ -154,6 +166,7 @@ module.exports = {
   createFileMetadata,
   createUniqueFileName,
   findFileMetadataById,
+  findFileMetadataByFilePath,
   deleteFileMetadataById,
   editFileMetadataById,
   findFileByFullPath,
