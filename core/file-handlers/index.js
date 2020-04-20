@@ -163,11 +163,32 @@ function initHandlers(options) {
 
   async function deleteFileHandler(req, res) {
     const {id} = req.params;
-
-    // if id contains / then id is filePath
-    const fileMetadata = id.indexOf('/') >= 0 ? await findFileMetadataByFilePath(id, req.namespace) : await findFileMetadataById(id, req.namespace);
+    const fileMetadata = await findFileMetadataById(id, req.namespace);
 
     if (!fileMetadata) return res.status(404).json({error: `No file with ID ${id} found`});
+
+    try {
+      if (fileMetadata.isFolder) {
+        const filesInFolder = await listFilesByFolder(fileMetadata.folderPath + fileMetadata.fileName + '/', req.namespace);
+        for (let f of filesInFolder) {
+          await fileStorage.deleteFile(transformExternal(f));
+        }
+      } else {
+        await fileStorage.deleteFile(transformExternal(fileMetadata));
+      }
+
+      await deleteFileMetadataById(id, req.namespace);
+      res.status(204).send();
+    } catch (e) {
+      console.error(e);
+      res.status(500).send();
+    }
+  }
+
+  async function deleteFileByFilePath(req, res) {
+    const {filePath} = req.params;
+    const fileMetadata = await findFileMetadataByFilePath(filePath, req.namespace);
+    if (!fileMetadata) return res.status(404).json({error: `No file with path ${filePath} found`});
 
     try {
       if (fileMetadata.isFolder) {
@@ -255,6 +276,7 @@ function initHandlers(options) {
     createFileMetadata: createFileMetadataHandler,
     createFolder: createFolderHandler,
     deleteFile: deleteFileHandler,
+    deleteFileByFilePath,
     downloadFileByFilePath,
     getFileMetadata,
     getFileUploadUrl,
