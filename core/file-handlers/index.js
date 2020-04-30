@@ -13,6 +13,7 @@ function initHandlers(options) {
   const MulterStorageEngine = require('../multer-storage-engine');
   const multerStorageEngine = new MulterStorageEngine(options);
   const upload = require('multer')({storage: multerStorageEngine});
+  const sharp = require('sharp');
 
   // helper functions
   async function validateFolderPath(folderPath, namespace, res) {
@@ -105,6 +106,7 @@ function initHandlers(options) {
   }
 
   async function getFileByFilePath(req, res, action) {
+    let {w, h} = req.query;
     const {filePath} = req.params;
     let fileMetadata = await findFileByFullPath(filePath, req.namespace);
 
@@ -117,7 +119,16 @@ function initHandlers(options) {
     if (action === 'download') res.setHeader('Content-disposition', 'attachment; filename=' + fileMetadata.fileName);
     res.status(200);
 
-    fileReadStream.pipe(res);
+    if (w && h) {
+      w = parseInt(w);
+      h = parseInt(h);
+      if (isNaN(w) || isNaN(h)) return res.status(400).json({error: 'w and h query must be numbers'});
+      const resizeOptions = {fit: 'fill', height: h, width: w};
+
+      fileReadStream.pipe(sharp().resize(resizeOptions)).pipe(res);
+    } else {
+      fileReadStream.pipe(res);
+    }
   }
 
   // 3. common functions
