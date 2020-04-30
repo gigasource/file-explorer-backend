@@ -47,9 +47,27 @@ async function createUniqueFileName(file) {
   return newFileName
 }
 
-async function createFileMetadata(file) {
+async function createFileMetadata(file, overwrite) {
   if (!file.folderPath.endsWith('/')) file.folderPath += '/';
-  file.fileName = await createUniqueFileName(file);
+
+  if (!overwrite) {
+    file.fileName = await createUniqueFileName(file);
+  } else {
+    const existingFile = await getFileMetadataStorage().findFileMetadata(transformExternal({
+      fileName: file.fileName,
+      folderPath: file.folderPath,
+      ...(file.namespace ? {namespace: file.namespace} : {}),
+    }));
+
+    if (existingFile) {
+      await getFileMetadataStorage().deleteFileMetadata(transformExternal({
+        fileName: file.fileName,
+        folderPath: file.folderPath,
+        ...(file.namespace ? {namespace: file.namespace} : {}),
+      }));
+    }
+  }
+
   return await getFileMetadataStorage().createFileMetadata(transformExternal(file));
 }
 
@@ -75,15 +93,15 @@ async function findFileMetadataByFilePath(filePath, namespace) {
 }
 
 async function deleteFileMetadataById(fileId, namespace) {
-  let editedFile = await getFileMetadataStorage().findFileMetadata({
+  let file = await getFileMetadataStorage().findFileMetadata({
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
-  editedFile = transformInternal(editedFile)
+  file = transformInternal(file)
 
-  if (editedFile.isFolder) {
+  if (file.isFolder) {
     await getFileMetadataStorage().deleteFileMetadata(transformExternal({
-      folderPath: editedFile.folderPath + editedFile.fileName + '/',
+      folderPath: file.folderPath + file.fileName + '/',
       ...(namespace ? {namespace} : {}),
     }));
   }

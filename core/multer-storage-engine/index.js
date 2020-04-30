@@ -18,7 +18,6 @@ class MulterStorageEngine {
     file.folderPath = req.query.folderPath;
     if (!file.folderPath.endsWith('/')) file.folderPath += '/';
     file.host = req.headers.host;
-    file.fileName = await createUniqueFileName(file);
 
     const uploadResult = await fileStorage.uploadFile(file);
     const {sizeInBytes, fileSource} = uploadResult

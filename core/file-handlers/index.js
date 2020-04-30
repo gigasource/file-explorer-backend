@@ -78,7 +78,7 @@ function initHandlers(options) {
       let successCount = 0;
 
       for (const file of req.files) {
-        const createdFile = await createFileMetadata(file);
+        const createdFile = await createFileMetadata(file, req.query.overwrite);
 
         if (file.uploadSuccess) {
           successCount++;
