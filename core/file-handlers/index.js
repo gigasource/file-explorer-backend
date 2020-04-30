@@ -107,7 +107,10 @@ function initHandlers(options) {
 
   async function getFileByFilePath(req, res, action) {
     let {w, h} = req.query;
-    const {filePath} = req.params;
+    let {filePath} = req.params;
+
+    if (!filePath.startsWith('/')) filePath = '/' + filePath
+
     let fileMetadata = await findFileByFullPath(filePath, req.namespace);
 
     if (!fileMetadata) return res.status(404).json({error: `File with path ${filePath} not found`});
@@ -115,7 +118,6 @@ function initHandlers(options) {
     const fileReadStream = await getFileStorage().downloadFile(transformExternal(fileMetadata));
 
     res.setHeader('Content-Type', fileMetadata.mimeType);
-    res.setHeader('Content-Length', fileMetadata.sizeInBytes);
     if (action === 'download') res.setHeader('Content-disposition', 'attachment; filename=' + fileMetadata.fileName);
     res.status(200);
 
@@ -127,6 +129,7 @@ function initHandlers(options) {
 
       fileReadStream.pipe(sharp().resize(resizeOptions)).pipe(res);
     } else {
+      res.setHeader('Content-Length', fileMetadata.sizeInBytes);
       fileReadStream.pipe(res);
     }
   }
