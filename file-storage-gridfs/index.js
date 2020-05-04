@@ -1,7 +1,6 @@
 const FileStorage = require('../interfaces/file-storage');
 const {GridFSBucket} = require('mongodb');
 const md5 = require('md5');
-const path = require('path');
 const mongoose = require('mongoose');
 
 class GridFsFileStorage extends FileStorage {
@@ -20,8 +19,7 @@ class GridFsFileStorage extends FileStorage {
 
   uploadFile(file) {
     return new Promise((resolve, reject) => {
-      // const uploadStream = this.bucket.openUploadStream(file.folderPath + file.fileName, {metadata: file});
-      const uploadStream = this.bucket.openUploadStream('', {metadata: {}});
+      const uploadStream = this.bucket.openUploadStream(file.originalname, {contentType: file.mimeType});
       const uploadStreamId = uploadStream.id;
 
       uploadStream.once('finish', async (uploadedFile) => {
@@ -38,7 +36,7 @@ class GridFsFileStorage extends FileStorage {
 
         resolve({
           fileSource: uploadedFileId,
-          filePath: `http://${file.host}/file/${file.fileName}`,
+          filePath: `${file.origin}/file/${file.fileName}`,
           chunksInfo,
           sizeInBytes: uploadedFile.length,
         });
@@ -51,6 +49,18 @@ class GridFsFileStorage extends FileStorage {
   async deleteFile(fileMetadata) {
     const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
     return this.bucket.delete(fileObjectId);
+  }
+
+  getFileMd5(fileMetadata) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
+        const file = (await mongoose.connection.db.collection(this.fileCollectionName).find({_id: fileObjectId}).toArray())[0];
+        resolve(file.md5);
+      } catch (e) {
+        reject(e);
+      }
+    })
   }
 
   async downloadFile(fileMetadata) {

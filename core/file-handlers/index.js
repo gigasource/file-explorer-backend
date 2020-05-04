@@ -14,6 +14,7 @@ function initHandlers(options) {
   const multerStorageEngine = new MulterStorageEngine(options);
   const upload = require('multer')({storage: multerStorageEngine});
   const sharp = require('sharp');
+  const fresh = require('fresh');
 
   // helper functions
   async function validateFolderPath(folderPath, namespace, res) {
@@ -106,32 +107,56 @@ function initHandlers(options) {
   }
 
   async function getFileByFilePath(req, res, action) {
-    let {w, h} = req.query;
+    let {w, h, cacheMaxAge = 86400 * 3} = req.query;
     let {filePath} = req.params;
-
+    const responseHeaders = {};
+    const requestHeaders = req.headers;
     if (!filePath.startsWith('/')) filePath = '/' + filePath
 
     let fileMetadata = await findFileByFullPath(filePath, req.namespace);
-
     if (!fileMetadata) return res.status(404).json({error: `File with path ${filePath} not found`});
 
+    const fileMd5 = await getFileStorage().getFileMd5(transformExternal(fileMetadata));
     const fileReadStream = await getFileStorage().downloadFile(transformExternal(fileMetadata));
 
-    res.setHeader('Content-Type', fileMetadata.mimeType);
-    if (action === 'download') res.setHeader('Content-disposition', 'attachment; filename=' + fileMetadata.fileName);
-    res.status(200);
+    responseHeaders['Etag'] = fileMd5;
+    responseHeaders['Accept-Ranges'] = 'bytes';
+    responseHeaders['Content-Type'] = fileMetadata.mimeType;
+    responseHeaders['X-Content-Type-Options'] = 'nosniff';
+    if (fileMetadata.updatedAt) responseHeaders['Last-Modified'] = fileMetadata.updatedAt;
+    if (action === 'download') responseHeaders['Content-disposition'] = 'attachment; filename=' + fileMetadata.fileName;
+    if (fresh(requestHeaders, responseHeaders)) return res.status(304).end()
 
-    if (w && h) {
-      w = parseInt(w);
-      h = parseInt(h);
-      if (isNaN(w) || isNaN(h)) return res.status(400).json({error: 'w and h query must be numbers'});
-      const resizeOptions = {fit: 'fill', height: h, width: w};
+    if (fileMetadata.mimeType && fileMetadata.mimeType.startsWith('image/')) {
+      if (cacheMaxAge > 0) res.setHeader('Cache-Control', `public, max-age=${cacheMaxAge}`);
+      else res.setHeader('Cache-Control', 'no-store');
 
-      fileReadStream.pipe(sharp().resize(resizeOptions)).pipe(res);
-    } else {
-      res.setHeader('Content-Length', fileMetadata.sizeInBytes);
-      fileReadStream.pipe(res);
+      const resizeOptions = {fit: 'fill'};
+
+      if (w || h) {
+        if (w) {
+          w = parseInt(w);
+          if (isNaN(w)) return res.status(400).json({error: 'w query must be a number'});
+          resizeOptions.width = w;
+        }
+
+        if (h) {
+          h = parseInt(h);
+          if (isNaN(h)) return res.status(400).json({error: 'h query must be a number'});
+          resizeOptions.height = h;
+        }
+
+        Object.keys(responseHeaders).forEach(key => res.setHeader(key, responseHeaders[key]));
+        res.status(200);
+        fileReadStream.pipe(sharp().resize(resizeOptions)).pipe(res);
+        return;
+      }
     }
+
+    Object.keys(responseHeaders).forEach(key => res.setHeader(key, responseHeaders[key]));
+    res.status(200);
+    res.setHeader('Content-Length', fileMetadata.sizeInBytes);
+    fileReadStream.pipe(res);
   }
 
   // 3. common functions
