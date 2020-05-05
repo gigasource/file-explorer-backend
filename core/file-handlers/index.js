@@ -13,8 +13,8 @@ function initHandlers(options) {
   const MulterStorageEngine = require('../multer-storage-engine');
   const multerStorageEngine = new MulterStorageEngine(options);
   const upload = require('multer')({storage: multerStorageEngine});
-  const sharp = require('sharp');
-  const fresh = require('fresh');
+  let sharp;
+  let fresh;
 
   // helper functions
   async function validateFolderPath(folderPath, namespace, res) {
@@ -107,6 +107,10 @@ function initHandlers(options) {
   }
 
   async function getFileByFilePath(req, res, action) {
+    // require is put in function to avoid problem with pos-restaurant app, restaurant app doesn't use this function
+    if (!sharp) sharp = require('sharp');
+    if (!fresh) fresh = require('fresh');
+
     let {w, h, cacheMaxAge = 86400 * 3} = req.query;
     let {filePath} = req.params;
     const responseHeaders = {};
