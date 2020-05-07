@@ -10,6 +10,7 @@ class GridFsFileStorage extends FileStorage {
     this.db = db;
     this.chunkCollectionName = `${options.bucketName}.chunks`;
     this.fileCollectionName = `${options.bucketName}.files`;
+    this.options = options;
 
     this.bucket = new GridFSBucket(db, {
       bucketName: options.bucketName,
@@ -19,7 +20,7 @@ class GridFsFileStorage extends FileStorage {
 
   uploadFile(file) {
     return new Promise((resolve, reject) => {
-      const uploadStream = this.bucket.openUploadStream(file.originalname, {contentType: file.mimeType});
+      const uploadStream = this.bucket.openUploadStream(file.originalname, {contentType: file.mimeType, writeConcern: this.options.writeConcern});
       const uploadStreamId = uploadStream.id;
 
       uploadStream.once('finish', async (uploadedFile) => {
