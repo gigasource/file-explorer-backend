@@ -1,6 +1,5 @@
 const {getFileStorage} = require('../util/dependencies');
-const {createUniqueFileName} = require('../file-handlers/file-metadata-handler');
-const {transformInternal} = require('../util/property-mapping');
+const {checkFileExisted} = require('../file-handlers/file-metadata-handler');
 
 const fileStorage = getFileStorage();
 
@@ -11,6 +10,19 @@ class MulterStorageEngine {
 
   async _handleFile(req, file, cb) {
     // req.on('close', () => this.cleanUploadedFiles(file, cb));
+    let {folderPath, ignoreDuplicate} = req.query;
+    if (!folderPath.endsWith('/')) folderPath += '/';
+
+    const fullFilePath = folderPath + file.originalname;
+
+    if (!ignoreDuplicate) {
+      const fileExisted = await checkFileExisted(fullFilePath);
+      if (fileExisted) {
+        file.uploadSuccess = false
+        file.errorMessage = `File ${fullFilePath} already existed`
+        return cb(null)
+      }
+    }
 
     if (req.namespace) file.namespace = req.namespace;
     file.fileName = file.originalname;

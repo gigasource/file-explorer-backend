@@ -55,11 +55,22 @@ function initHandlers(options) {
 
   // This function is used after the file is uploaded to S3 successfully to insert file metadata into database
   async function createFileMetadataHandler(req, res) {
-    if (!(await validateFolderPath(req.body.folderPath, req.namespace, res))) return;
+    const {ignoreDuplicate} = req.query;
+    let {fileName, folderPath} = req.body;
+    if (!folderPath.endsWith('/')) folderPath += '/';
+
+    if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
+
+    if (!ignoreDuplicate) {
+      const fullFilePath = folderPath + fileName;
+      const fileExisted = await checkFileExisted(fullFilePath);
+      if (fileExisted) return res.status(400).json({error: `File ${fullFilePath} already existed`});
+    }
 
     try {
       await createFileMetadata({
-        ...req.body,
+        fileName,
+        folderPath,
         ...(req.namespace ? {namespace: req.namespace} : {}),
       });
 
@@ -72,7 +83,7 @@ function initHandlers(options) {
 
   // 2. functions used specifically for direct storage such as BunnyCDN or GridFS, the files goes through the server so Multer is needed
   async function uploadFile(req, res) {
-    const folderPath = req.query.folderPath;
+    const {folderPath, overwrite} = req.query;
     if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
 
     upload.any()(req, res, async function () {
@@ -80,15 +91,20 @@ function initHandlers(options) {
       let successCount = 0;
 
       for (const file of req.files) {
-        const createdFile = await createFileMetadata(file, req.query.overwrite);
-
         if (file.uploadSuccess) {
+          const createdFile = await createFileMetadata(file, overwrite);
           successCount++;
           uploadResults.push({uploadSuccess: true, createdFile});
-        } else uploadResults.push({uploadSuccess: false, file: file.originalname});
+        } else {
+          uploadResults.push({
+            uploadSuccess: false,
+            file: file.originalname,
+            ...file.errorMessage && {error: file.errorMessage},
+          });
+        }
       }
 
-      const statusCode = successCount > 0 ? 200 : 500;
+      const statusCode = successCount > 0 ? 201 : 500;
       if (successCount === 0) uploadResults = {
         success: false,
         message: 'No file was uploaded'
@@ -165,8 +181,11 @@ function initHandlers(options) {
 
   // 3. common functions
   async function checkExisted(req, res) {
-    const {filePath} = req.query;
+    let {filePath} = req.query;
 
+    if (!filePath) return res.status(400).json({error: 'filePath query is required'})
+
+    if (!filePath.startsWith('/')) filePath = '/' + filePath
     const fileExisted = await checkFileExisted(filePath);
 
     res.status(200).json({existed: fileExisted});
@@ -195,6 +214,9 @@ function initHandlers(options) {
 
   async function createFolderHandler(req, res) {
     let {folderName, folderPath} = req.body;
+    const {ignoreDuplicate} = req.query
+
+    if (!folderPath.endsWith('/')) folderPath += '/';
     if (!folderName || !folderPath) return res.status(400).json({error: 'folder name and folder path can not be empty'});
 
     if (folderName !== '/' && folderPath !== '/') {
@@ -203,6 +225,12 @@ function initHandlers(options) {
     }
 
     try {
+      if (!ignoreDuplicate) {
+        const fullFolderPath = folderPath + folderName
+        const fileExisted = await checkFileExisted(fullFolderPath);
+        if (fileExisted) return res.status(400).json({error: `Folder ${fullFolderPath} already existed`});
+      }
+
       const result = await createFolder(folderName, folderPath, req.namespace);
 
       if (!result) return res.status(400).json({error: `Folder ${folderName} already existed in path ${folderPath}`});
