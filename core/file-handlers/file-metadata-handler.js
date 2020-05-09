@@ -1,13 +1,26 @@
 const {getFileMetadataStorage} = require('../util/dependencies');
 const {transformExternal, transformInternal} = require('../util/property-mapping');
 const {ERROR_CODE, constructError} = require('../util/errors');
+const {extractFilePath} = require('../util/file-path');
+
+async function checkFileExisted(fullPath, namespace) {
+  const {fileName, folderPath} = extractFilePath(fullPath);
+
+  const fileMetadatas = await getFileMetadataStorage().findFileMetadatas(transformExternal({
+    fileName,
+    folderPath,
+    ...(namespace ? {namespace} : {}),
+  }));
+
+  return fileMetadatas.length !== 0
+}
 
 async function findFileByFullPath(fullPath, namespace) {
   const paths = fullPath.split('/');
   let fileName = paths.pop();
   if (fileName.trim().length === 0) fileName = paths.pop();
   let folderPath = paths.join('/');
-  if (!folderPath.endsWith('/')) folderPath += '/';
+
 
   let returnedFile = await getFileMetadataStorage().findFileMetadata(transformExternal({
     fileName, folderPath,
@@ -190,4 +203,5 @@ module.exports = {
   findFileByFullPath,
   renameFileMetadata,
   moveFileMetadata,
+  checkFileExisted,
 };

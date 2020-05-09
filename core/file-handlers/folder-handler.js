@@ -1,13 +1,12 @@
 const {getFileMetadataStorage} = require('../util/dependencies');
 const {transformExternal, transformInternal} = require('../util/property-mapping');
 const {createUniqueFileName} = require('./file-metadata-handler');
+const {extractFilePath} = require('../util/file-path');
 
 async function findFolder(fullPath, namespace) {
-  const paths = fullPath.split('/');
-  let folderName = paths.pop();
-  if (folderName.trim().length === 0) folderName = paths.pop();
+  const {fileName: folderName, folderPath} = extractFilePath(fullPath)
 
-  return await _findFolder(folderName, paths.join('/'), namespace);
+  return await _findFolder(folderName, folderPath, namespace);
 }
 
 async function _findFolder(folderName, folderPath, namespace) {

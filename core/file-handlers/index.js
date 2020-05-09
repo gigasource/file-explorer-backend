@@ -1,11 +1,11 @@
 function initHandlers(options) {
   const {getFileStorage} = require('../util/dependencies');
   const fileStorage = getFileStorage();
-  const {createFolder, listFilesByFolder, findFolder, constructFolderTree} = require('../file-handlers/folder-handler');
+  const {createFolder, listFilesByFolder, findFolder, constructFolderTree,} = require('../file-handlers/folder-handler');
   const {transformExternal} = require('../util/property-mapping');
   const {
     createFileMetadata, findFileMetadataById, findFileMetadataByFilePath, deleteFileMetadataById,
-    findFileByFullPath, editFileMetadataById, createUniqueFileName,
+    findFileByFullPath, editFileMetadataById, createUniqueFileName, checkFileExisted,
   } = require('../file-handlers/file-metadata-handler');
   const path = require('path');
   const uuidv1 = require('uuid/v1');
@@ -164,9 +164,17 @@ function initHandlers(options) {
   }
 
   // 3. common functions
+  async function checkExisted(req, res) {
+    const {filePath} = req.query;
+
+    const fileExisted = await checkFileExisted(filePath);
+
+    res.status(200).json({existed: fileExisted});
+  }
+
   async function listFilesByFolderHandler(req, res) {
-    let {folderPath} = req.query;
-    if (!(await validateFolderPath(req.query.folderPath, req.namespace, res))) return;
+    const {folderPath} = req.query;
+    if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
 
     try {
       let files = (await listFilesByFolder(folderPath, req.namespace)) || [];
@@ -330,6 +338,7 @@ function initHandlers(options) {
     uploadFile,
     viewFileByFilePath,
     getPropertyMappings,
+    checkFileExisted: checkExisted,
   }
 }
 
