@@ -16,11 +16,7 @@ async function checkFileExisted(fullPath, namespace) {
 }
 
 async function findFileByFullPath(fullPath, namespace) {
-  const paths = fullPath.split('/');
-  let fileName = paths.pop();
-  if (fileName.trim().length === 0) fileName = paths.pop();
-  let folderPath = paths.join('/');
-
+  const {fileName, folderPath} = extractFilePath(fullPath);
 
   let returnedFile = await getFileMetadataStorage().findFileMetadata(transformExternal({
     fileName, folderPath,
