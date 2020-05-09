@@ -18,9 +18,8 @@ class MulterStorageEngine {
     if (!ignoreDuplicate) {
       const fileExisted = await checkFileExisted(fullFilePath);
       if (fileExisted) {
-        file.uploadSuccess = false
-        file.errorMessage = `File ${fullFilePath} already existed`
-        return cb(null)
+        file.uploadSuccess = false;
+        return cb(`File ${fullFilePath} already existed, other files will be skipped`);
       }
     }
 
@@ -39,6 +38,7 @@ class MulterStorageEngine {
 
     //todo: handle upload error
     file.uploadSuccess = true; // this is used in handler to return result to client
+
     cb(null);
   }
 

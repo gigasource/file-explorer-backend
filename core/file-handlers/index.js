@@ -86,28 +86,33 @@ function initHandlers(options) {
     const {folderPath, overwrite} = req.query;
     if (!(await validateFolderPath(folderPath, req.namespace, res))) return;
 
-    upload.any()(req, res, async function () {
+    upload.any()(req, res, async function (error) {
       let uploadResults = [];
       let successCount = 0;
 
-      for (const file of req.files) {
-        if (file.uploadSuccess) {
-          const createdFile = await createFileMetadata(file, overwrite);
-          successCount++;
-          uploadResults.push({uploadSuccess: true, createdFile});
-        } else {
-          uploadResults.push({
-            uploadSuccess: false,
-            file: file.originalname,
-            ...file.errorMessage && {error: file.errorMessage},
-          });
+      if (!error) {
+        for (const file of req.files) {
+          if (file.uploadSuccess) {
+            const createdFile = await createFileMetadata(file, overwrite);
+            successCount++;
+            uploadResults.push({
+              uploadSuccess: true,
+              createdFile,
+            });
+          } else {
+            uploadResults.push({
+              uploadSuccess: false,
+              file: file.originalname,
+              ...error && {error},
+            });
+          }
         }
       }
 
       const statusCode = successCount > 0 ? 201 : 500;
       if (successCount === 0) uploadResults = {
         success: false,
-        message: 'No file was uploaded'
+        message: error || 'Upload failed',
       };
 
       res.status(statusCode).json(uploadResults);
