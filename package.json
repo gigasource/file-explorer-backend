@@ -2,7 +2,7 @@
   "name": "file-explorer-backend",
   "description": "An Express middleware for uploading files",
   "author": "Gigasource",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "main": "./index.js",
   "scripts": {
