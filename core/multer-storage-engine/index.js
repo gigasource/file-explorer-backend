@@ -10,12 +10,12 @@ class MulterStorageEngine {
 
   async _handleFile(req, file, cb) {
     // req.on('close', () => this.cleanUploadedFiles(file, cb));
-    let {folderPath, ignoreDuplicate} = req.query;
+    let {folderPath, ignoreDuplicate, overwrite} = req.query;
     if (!folderPath.endsWith('/')) folderPath += '/';
 
     const fullFilePath = folderPath + file.originalname;
 
-    if (!ignoreDuplicate) {
+    if (!ignoreDuplicate && !overwrite) {
       const fileExisted = await checkFileExisted(fullFilePath);
       if (fileExisted) {
         file.uploadSuccess = false;

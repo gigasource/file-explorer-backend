@@ -239,7 +239,7 @@ function initHandlers(options) {
       const result = await createFolder(folderName, folderPath, req.namespace);
 
       if (!result) return res.status(400).json({error: `Folder ${folderName} already existed in path ${folderPath}`});
-      else return res.status(201).send();
+      else return res.status(201).json(result);
     } catch (e) {
       res.status(500).send();
     }
