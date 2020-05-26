@@ -19,8 +19,12 @@ class GridFsFileStorage extends FileStorage {
   }
 
   uploadFile(file) {
-    return new Promise((resolve, reject) => {
-      const uploadStream = this.bucket.openUploadStream(file.originalname, {contentType: file.mimeType, writeConcern: this.options.writeConcern});
+    return new Promise(resolve => {
+      const uploadStreamOpts = {
+        contentType: file.mimeType,
+        ...this.options.writeConcern ? {writeConcern: this.options.writeConcern} : {},
+      };
+      const uploadStream = this.bucket.openUploadStream(file.originalname, uploadStreamOpts);
       const uploadStreamId = uploadStream.id;
 
       uploadStream.once('finish', async (uploadedFile) => {
