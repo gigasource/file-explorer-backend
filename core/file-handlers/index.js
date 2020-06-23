@@ -5,7 +5,7 @@ function initHandlers(options) {
   const {transformExternal} = require('../util/property-mapping');
   const {
     createFileMetadata, findFileMetadataById, findFileMetadataByFilePath, deleteFileMetadataById,
-    findFileByFullPath, editFileMetadataById, createUniqueFileName, checkFileExisted,
+    findFileByFullPath, editFileMetadataById, createUniqueFileName, checkFileExisted, cloneFileMetadata,
   } = require('../file-handlers/file-metadata-handler');
   const path = require('path');
   const uuidv1 = require('uuid/v1');
@@ -48,8 +48,7 @@ function initHandlers(options) {
         ...uploadData
       });
     } catch (e) {
-      console.error(e);
-      res.status(500).send();
+      handleError(e, res);
     }
   }
 
@@ -68,16 +67,15 @@ function initHandlers(options) {
     }
 
     try {
-      await createFileMetadata({
+      const createdFile = await createFileMetadata({
         fileName,
         folderPath,
         ...(req.namespace ? {namespace: req.namespace} : {}),
       });
 
-      res.status(201).send();
+      res.status(201).json(transformExternal(createdFile));
     } catch (e) {
-      console.error(e);
-      res.status(500).send();
+      handleError(e, res);
     }
   }
 
@@ -97,7 +95,7 @@ function initHandlers(options) {
             successCount++;
             uploadResults.push({
               uploadSuccess: true,
-              createdFile,
+              createdFile: transformExternal(createdFile),
             });
           } else {
             uploadResults.push({
@@ -191,7 +189,7 @@ function initHandlers(options) {
     if (!filePath) return res.status(400).json({error: 'filePath query is required'})
 
     if (!filePath.startsWith('/')) filePath = '/' + filePath
-    const fileExisted = await checkFileExisted(filePath);
+    const fileExisted = await checkFileExisted(filePath, req.namespace);
 
     res.status(200).json({existed: fileExisted});
   }
@@ -214,7 +212,7 @@ function initHandlers(options) {
     const file = await findFileMetadataById(id, req.namespace);
 
     if (!file) res.status(404).json({error: `No file with ID ${id} found`});
-    else res.status(200).json(file);
+    else res.status(200).json(transformExternal(file));
   }
 
   async function createFolderHandler(req, res) {
@@ -239,7 +237,7 @@ function initHandlers(options) {
       const result = await createFolder(folderName, folderPath, req.namespace);
 
       if (!result) return res.status(400).json({error: `Folder ${folderName} already existed in path ${folderPath}`});
-      else return res.status(201).json(result);
+      else return res.status(201).json(transformExternal(result));
     } catch (e) {
       res.status(500).send();
     }
@@ -310,7 +308,7 @@ function initHandlers(options) {
     if (!(await fileExists(id, req, res))) return
 
     try {
-      const result = await editFileMetadataById(id, {fileName: newFileName});
+      const result = await editFileMetadataById(id, {fileName: newFileName}, req.namespace);
       res.status(200).json(result);
     } catch (e) {
       handleError(e, res);
@@ -321,13 +319,30 @@ function initHandlers(options) {
     const {newFolderPath} = req.body;
     const {id} = req.params;
 
-    if (!id || !newFolderPath) return res.status(400).json({error: 'Missing required property: file ID or new folder path not found'})
+    if (!id || !newFolderPath) return res.status(400).json({error: 'Missing required property: file ID or new folder path not found'});
 
-    if (!(await fileExists(id, req, res))) return
+    if (!(await fileExists(id, req, res))) return;
 
     try {
-      const result = await editFileMetadataById(id, {folderPath: newFolderPath});
+      const result = await editFileMetadataById(id, {folderPath: newFolderPath}, req.namespace);
       res.status(200).json(result);
+    } catch (e) {
+      handleError(e, res);
+    }
+  }
+
+  async function cloneFile(req, res) {
+    const {newFolderPath} = req.body;
+    const {id} = req.params;
+
+    if (!id || !newFolderPath) return res.status(400).json({error: 'Missing required property: file ID or new folder path not found'});
+    if (!(await fileExists(id, req, res))) return;
+
+    try {
+      const clonedFile = await findFileMetadataById(id, req.namespace);
+      const {fileSource} = await getFileStorage().cloneFile(clonedFile.fileSource);
+      const clonedFileInfo = await cloneFileMetadata(id, newFolderPath, fileSource, req.namespace);
+      res.status(200).json(transformExternal(clonedFileInfo));
     } catch (e) {
       handleError(e, res);
     }
@@ -372,6 +387,7 @@ function initHandlers(options) {
     viewFileByFilePath,
     getPropertyMappings,
     checkFileExisted: checkExisted,
+    cloneFile,
   }
 }
 

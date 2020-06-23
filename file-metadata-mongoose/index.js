@@ -18,10 +18,11 @@ class MongooseFileMetadataStorage extends FileMetadataStorage {
     });
   }
 
-  createFileMetadata(file) {
+  async createFileMetadata(file) {
     file = this.transformObject(file)
 
-    return FileModel.create(file);
+    const doc = await FileModel.create(file);
+    return doc._doc;
   }
 
   deleteFileMetadata(conditions) {

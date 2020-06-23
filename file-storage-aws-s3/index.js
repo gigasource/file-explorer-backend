@@ -48,6 +48,8 @@ class AwsS3FileStorage extends FileStorage {
       }, async (err, data) => err ? reject(err) : resolve(data))
     });
   }
+
+  //TODO: implement cloneFile function
 }
 
 module.exports = AwsS3FileStorage;

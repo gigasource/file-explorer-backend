@@ -36,8 +36,11 @@ function transformExternal(internalObject) {
     const externalObject = {};
     Reflect.ownKeys(obj).forEach(originProp => {
       let destProp = propertyMappings[originProp] ? propertyMappings[originProp] : originProp;
-      if (Array.isArray(destProp)) destProp = destProp[0]
-      externalObject[destProp] = obj[originProp];
+      if (Array.isArray(destProp)) {
+        destProp.forEach(prop => externalObject[prop] = obj[originProp]);
+      } else {
+        externalObject[destProp] = obj[originProp];
+      }
     });
     return externalObject;
   }

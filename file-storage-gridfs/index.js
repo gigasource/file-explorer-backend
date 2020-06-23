@@ -60,7 +60,7 @@ class GridFsFileStorage extends FileStorage {
     return new Promise(async (resolve, reject) => {
       try {
         const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
-        const file = (await mongoose.connection.db.collection(this.fileCollectionName).find({_id: fileObjectId}).toArray())[0];
+        const file = (await this.db.collection(this.fileCollectionName).find({_id: fileObjectId}).toArray())[0];
         resolve(file.md5);
       } catch (e) {
         reject(e);
@@ -71,6 +71,22 @@ class GridFsFileStorage extends FileStorage {
   async downloadFile(fileMetadata) {
     const fileObjectId = mongoose.Types.ObjectId(fileMetadata.fileSource);
     return this.bucket.openDownloadStream(fileObjectId);
+  }
+
+  async cloneFile(fileId) {
+    const ObjectId = mongoose.Types.ObjectId;
+    if (!(fileId instanceof ObjectId)) fileId = ObjectId(fileId);
+
+    const fileInfo = await this.db.collection(this.fileCollectionName).findOne({_id: fileId});
+    const downloadStream = this.bucket.openDownloadStream(fileId);
+
+    const file = {
+      mimeType: fileInfo.contentType,
+      originalname: fileInfo.filename,
+      stream: downloadStream,
+    }
+
+    return await this.uploadFile(file);
   }
 }
 

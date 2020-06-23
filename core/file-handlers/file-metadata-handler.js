@@ -165,7 +165,7 @@ async function moveFileMetadata(fileId, newFolderPath, namespace) {
     _id: fileId,
     ...(namespace ? {namespace} : {}),
   });
-  editedFile = transformInternal(editedFile)
+  editedFile = transformInternal(editedFile);
 
   // check if new folder has duplicates -> if yes throw an error
   const filesWithSameName = await getFileMetadataStorage().findFileMetadatas(transformExternal({
@@ -189,6 +189,22 @@ async function moveFileMetadata(fileId, newFolderPath, namespace) {
   }
 }
 
+async function cloneFileMetadata(fileId, newFolderPath, fileSource, namespace) {
+  let clonedFile = await getFileMetadataStorage().findFileMetadata({
+    _id: fileId,
+    ...(namespace ? {namespace} : {}),
+  });
+  clonedFile = transformInternal(clonedFile);
+
+  const fileName = clonedFile.fileName;
+  clonedFile.fileName = await createUniqueFileName({fileName, folderPath: newFolderPath});
+  clonedFile.folderPath = newFolderPath;
+  clonedFile.fileSource = fileSource;
+  delete clonedFile._id;
+
+  return await createFileMetadata(clonedFile);
+}
+
 module.exports = {
   createFileMetadata,
   createUniqueFileName,
@@ -200,4 +216,5 @@ module.exports = {
   renameFileMetadata,
   moveFileMetadata,
   checkFileExisted,
+  cloneFileMetadata,
 };
