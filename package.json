@@ -1,9 +1,8 @@
 {
-  "name": "file-explorer-backend",
+  "name": "@gigasource/vue-file-explorer-backend",
   "description": "An Express middleware for uploading files",
   "author": "Gigasource",
-  "version": "1.0.5",
-  "private": true,
+  "version": "1.0.0",
   "main": "./index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha test/mocha/*-test.js"
