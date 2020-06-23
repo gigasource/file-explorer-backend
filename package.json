@@ -1,5 +1,5 @@
 {
-  "name": "@gigasource/vue-file-explorer-backend",
+  "name": "@gigasource/file-explorer-backend",
   "description": "An Express middleware for uploading files",
   "author": "Gigasource",
   "version": "1.0.0",
