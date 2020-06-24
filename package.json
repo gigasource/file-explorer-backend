@@ -1,8 +1,8 @@
 {
-  "name": "@gigasource/file-explorer-backend",
+  "name": "file-explorer-backend",
   "description": "An Express middleware for uploading files",
   "author": "Gigasource",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "main": "./index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha test/mocha/*-test.js"
