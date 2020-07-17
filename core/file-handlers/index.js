@@ -130,7 +130,7 @@ function initHandlers(options) {
     if (!sharp) sharp = require('sharp');
     if (!fresh) fresh = require('fresh');
 
-    let {w, h, cacheMaxAge = 86400 * 3} = req.query;
+    let {w, h, cacheMaxAge = 86400 * 3, keepRatio = ''} = req.query;
     let {filePath} = req.params;
     const responseHeaders = {};
     const requestHeaders = req.headers;
@@ -154,7 +154,7 @@ function initHandlers(options) {
       if (cacheMaxAge > 0) res.setHeader('Cache-Control', `public, max-age=${cacheMaxAge}`);
       else res.setHeader('Cache-Control', 'no-store');
 
-      const resizeOptions = {fit: 'fill'};
+      const resizeOptions = {fit: keepRatio === 'true' ? 'contain' : 'fill'};
 
       if (w || h) {
         if (w) {
@@ -171,7 +171,11 @@ function initHandlers(options) {
 
         Object.keys(responseHeaders).forEach(key => res.setHeader(key, responseHeaders[key]));
         res.status(200);
-        fileReadStream.pipe(sharp().resize(resizeOptions)).pipe(res);
+
+        const sharpStream = sharp();
+        sharpStream.jpeg({quality: 100, force: false});
+
+        fileReadStream.pipe(sharpStream.resize(resizeOptions)).pipe(res);
         return;
       }
     }
