@@ -130,7 +130,7 @@ function initHandlers(options) {
     if (!sharp) sharp = require('sharp');
     if (!fresh) fresh = require('fresh');
 
-    let {w, h, cacheMaxAge = 86400 * 3, keepRatio = ''} = req.query;
+    let {w, h, cacheMaxAge = 86400 * 3, keepRatio = '', sharpen = ''} = req.query;
     let {filePath} = req.params;
     const responseHeaders = {};
     const requestHeaders = req.headers;
@@ -173,6 +173,7 @@ function initHandlers(options) {
         res.status(200);
 
         const sharpStream = sharp();
+        if (sharpen === 'true') sharpStream.sharpen();
         sharpStream.jpeg({quality: 100, force: false});
 
         fileReadStream.pipe(sharpStream.resize(resizeOptions)).pipe(res);
