@@ -130,11 +130,11 @@ function initHandlers(options) {
     if (!sharp) sharp = require('sharp');
     if (!fresh) fresh = require('fresh');
 
-    let {w, h, cacheMaxAge = 86400 * 3, keepRatio = '', sharpen = ''} = req.query;
+    let {w, h, cacheMaxAge = 86400 * 3, keepRatio = ''} = req.query;
     let {filePath} = req.params;
     const responseHeaders = {};
     const requestHeaders = req.headers;
-    if (!filePath.startsWith('/')) filePath = '/' + filePath
+    if (!filePath.startsWith('/')) filePath = '/' + filePath;
 
     let fileMetadata = await findFileByFullPath(filePath, req.namespace);
     if (!fileMetadata) return res.status(404).json({error: `File with path ${filePath} not found`});
@@ -173,7 +173,7 @@ function initHandlers(options) {
         res.status(200);
 
         const sharpStream = sharp();
-        if (sharpen === 'true') sharpStream.sharpen();
+        sharpStream.sharpen(0.5);
         sharpStream.jpeg({quality: 100, force: false});
 
         fileReadStream.pipe(sharpStream.resize(resizeOptions)).pipe(res);
