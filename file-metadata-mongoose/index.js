@@ -22,7 +22,7 @@ class MongooseFileMetadataStorage extends FileMetadataStorage {
     file = this.transformObject(file)
 
     const doc = await FileModel.create(file);
-    return doc._doc;
+    return doc;
   }
 
   deleteFileMetadata(conditions) {
