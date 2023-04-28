@@ -32,6 +32,7 @@ const fileSchema = new Schema({
     type: String,
     trim: true,
   },
+  createdDate: Date
 }, {
   timestamps: true
 });

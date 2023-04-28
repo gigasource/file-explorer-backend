@@ -15,12 +15,13 @@ class MongooseFileMetadataStorage extends FileMetadataStorage {
     return FileModel.create({
       ...folder,
       isFolder: true,
+      createdDate: new Date()
     });
   }
 
   async createFileMetadata(file) {
     file = this.transformObject(file)
-
+    file.createdDate = new Date()
     const doc = await FileModel.create(file);
     return doc;
   }
