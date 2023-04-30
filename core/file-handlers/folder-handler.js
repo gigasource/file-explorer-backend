@@ -49,7 +49,9 @@ async function listFilesByFolder(folderPath, namespace) {
 }
 
 async function constructFolderTree(namespace) {
-  const maps = {}
+  const maps = {
+    '/': {folderName: '/', folderPath: '/', folders: [] }
+  }
   const folders = await getFileMetadataStorage().findFileMetadatas(transformInternal({
     isFolder: true,
     ...(namespace ? {namespace} : {})
@@ -64,13 +66,6 @@ async function constructFolderTree(namespace) {
       }
     }
     const myNode = maps[myPath]
-    if (!maps[folder.folderPath]) {
-      maps[folder.folderPath] = {
-        folderName: folder.fileName,
-        folderPath: folder.folderPath,
-        folders: []
-      }
-    }
     const parentNode = maps[folder.folderPath]
     parentNode.folders.push(myNode)
   }
