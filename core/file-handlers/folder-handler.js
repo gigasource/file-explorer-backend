@@ -66,6 +66,20 @@ async function constructFolderTree(namespace) {
       }
     }
     const myNode = maps[myPath]
+    // for some reasons, the parent folder record is lie after the child
+    // so when we visit the child, the parent node is not exist yet
+    // that why we need to placeholder first, then refill the data later
+    if (myNode.isPlaceholder) {
+      myNode.folderName = folder.fileName
+      myNode.folderPath = folder.folderPath
+      delete myNode.isPlaceholder
+    }
+    if (!maps[folder.folderPath]) {
+      maps[folder.folderPath] = {
+        isPlaceholder: true,
+        folders: []
+      }
+    }
     const parentNode = maps[folder.folderPath]
     parentNode.folders.push(myNode)
   }
