@@ -258,10 +258,18 @@ function initHandlers(options) {
       if (fileMetadata.isFolder) {
         const filesInFolder = await listFilesByFolder(fileMetadata.folderPath + fileMetadata.fileName + '/', req.namespace);
         for (let f of filesInFolder) {
-          await fileStorage.deleteFile(transformExternal(f));
+          try {
+            await fileStorage.deleteFile(transformExternal(f));
+          } catch (e) {
+            console.error(e, 'deleteFileHandler', id)
+          }
         }
       } else {
-        await fileStorage.deleteFile(transformExternal(fileMetadata));
+        try {
+          await fileStorage.deleteFile(transformExternal(fileMetadata));
+        } catch (e) {
+          console.error(e, 'deleteFileHandler', id)
+        }
       }
 
       await deleteFileMetadataById(id, req.namespace);
