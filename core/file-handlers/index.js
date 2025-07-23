@@ -88,6 +88,11 @@ function initHandlers(options) {
       let uploadResults = [];
       let successCount = 0;
 
+      if (Array.isArray(req.files) && req.files.length === 0) {
+        // file skipped
+        return res.status(200).json([]);
+      }
+
       if (!error) {
         for (const file of req.files) {
           if (file.uploadSuccess) {
